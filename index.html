@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Résumé Studio — Hardware &amp; Embedded Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Jost:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Caveat:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ======================= DESIGN TOKENS ======================= */
+:root {
+  --maroon-950: #24070d;
+  --maroon-900: #330d17;
+  --maroon-850: #3c101c;
+  --maroon-800: #4a1422;
+  --maroon-700: #5c1a2b;
+  --maroon-600: #732236;
+  --cashmere: #f4ead9;
+  --cashmere-light: #faf6ee;
+  --cashmere-dark: #e8dcc8;
+  --line: #d8c4a5;
+  --ink: #2a1216;
+  --ink-soft: #554140;
+  --cream-text: #f6eedf;
+  --cream-muted: rgba(246, 238, 223, 0.72);
+  --gold: #c99a6b;
+  --gold-light: #deb58d;
+  --app-bg: #ece5d9;
+  --panel-bg: #ffffff;
+  --card-bg: #f9f5ed;
+  --danger: #b33939;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-script: 'Caveat', cursive;
+  --font-body: 'Jost', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--font-body);
+  background: var(--app-bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ======================= APP SHELL ======================= */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 12px 24px;
+  background: var(--maroon-950);
+  color: var(--cream-text);
+  box-shadow: 0 3px 14px rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid rgba(201, 154, 107, 0.25);
+}
+.topbar .brand { display: flex; align-items: baseline; gap: 12px; }
+.topbar .brand h1 {
+  font-family: var(--font-display);
+  font-size: 21px; margin: 0; letter-spacing: 0.5px;
+  color: #fff;
+}
+.topbar .brand span {
+  font-family: var(--font-script);
+  font-size: 19px; color: var(--gold);
+}
+.topbar .actions { display: flex; gap: 10px; align-items: center; }
+
+.btn {
+  font-family: var(--font-body); font-weight: 600; font-size: 13px;
+  border: 1px solid transparent; border-radius: 7px; padding: 8px 15px;
+  cursor: pointer; transition: all 0.15s ease;
+  letter-spacing: 0.2px; display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(135deg, #d4a778 0%, #b88653 100%);
+  color: var(--maroon-950);
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.btn-primary:hover { opacity: 0.94; transform: translateY(-1px); }
+.btn-ghost {
+  background: transparent; color: var(--cream-text);
+  border-color: rgba(246, 238, 223, 0.3);
+}
+.btn-ghost:hover { background: rgba(246, 238, 223, 0.12); }
+.btn-small { padding: 5px 9px; font-size: 12px; border-radius: 5px; }
+.btn-add {
+  background: #f1e7d5; color: var(--maroon-850);
+  border: 1px dashed var(--maroon-700); font-weight: 600;
+}
+.btn-add:hover { background: #e8dbbf; }
+.btn-remove {
+  background: transparent; color: var(--danger);
+  border: 1px solid rgba(179, 57, 57, 0.3);
+  width: 26px; height: 26px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; cursor: pointer; transition: all 0.12s;
+}
+.btn-remove:hover { background: rgba(179, 57, 57, 0.1); }
+
+.layout {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  min-height: calc(100vh - 58px);
+}
+@media (max-width: 1080px) {
+  .layout { grid-template-columns: 1fr; }
+  .preview-pane { order: -1; }
+}
+
+/* ======================= FORM PANEL ======================= */
+.form-pane {
+  background: var(--panel-bg);
+  border-right: 1px solid #d9ccb4;
+  padding: 22px 24px 80px;
+  max-height: calc(100vh - 58px);
+  overflow-y: auto;
+}
+.form-pane::-webkit-scrollbar { width: 8px; }
+.form-pane::-webkit-scrollbar-thumb { background: #d0c0a5; border-radius: 6px; }
+
+.f-section {
+  margin-bottom: 24px;
+  background: #fff;
+  border: 1px solid #e7dfce;
+  border-radius: 9px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+}
+.f-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px; padding-bottom: 9px;
+  border-bottom: 2px solid var(--maroon-800);
+}
+.f-section-head .title-wrap {
+  display: flex; align-items: center; gap: 8px;
+}
+.f-section-head svg { width: 17px; height: 17px; fill: var(--maroon-800); }
+.f-section-head h3 {
+  font-family: var(--font-body); font-size: 13.5px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; color: var(--maroon-800);
+  margin: 0;
+}
+.badge-count {
+  font-size: 11px; background: #ebdcc4; color: var(--maroon-900);
+  padding: 2px 7px; border-radius: 12px; font-weight: 600;
+}
+
+.f-row { margin-bottom: 11px; }
+.f-row label {
+  display: block; font-size: 11.5px; font-weight: 600;
+  color: var(--ink-soft); margin-bottom: 4px; letter-spacing: 0.2px;
+}
+.f-row input[type=text], .f-row input[type=email], .f-row input[type=tel],
+.f-row textarea, .f-row select {
+  width: 100%; padding: 8px 10px; font-family: var(--font-body);
+  font-size: 13px; border: 1px solid #d6c6ac; border-radius: 6px;
+  background: #fffefb; color: var(--ink); outline: none; resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.f-row input:focus, .f-row textarea:focus, .f-row select:focus {
+  border-color: var(--maroon-600);
+  box-shadow: 0 0 0 3px rgba(92, 26, 43, 0.1);
+}
+.f-row textarea { min-height: 60px; line-height: 1.45; }
+.f-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.f-three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.hint { font-size: 11px; color: #8e7c6b; margin-top: 3px; }
+
+.list-row { display: flex; gap: 8px; align-items: center; margin-bottom: 7px; }
+.list-row input { flex: 1; }
+.contact-row select {
+  width: 125px;
+  flex-shrink: 0;
+  padding: 8px 6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  border: 1px solid #d6c6ac;
+  border-radius: 6px;
+  background: #fffefb;
+  color: var(--ink);
+  outline: none;
+}
+
+.card {
+  background: var(--card-bg); border: 1px solid #e2d3ba; border-radius: 8px;
+  padding: 13px 14px; margin-bottom: 11px; position: relative;
+}
+.card-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.card-tag {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.8px; color: var(--maroon-700);
+}
+
+.photo-upload { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.photo-preview {
+  width: 68px; height: 68px; border-radius: 50%; object-fit: cover;
+  border: 2px solid var(--maroon-700); background: #e5dbc9;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  overflow: hidden;
+}
+.photo-preview svg { width: 30px; height: 30px; fill: #a59275; }
+.upload-btn-wrap input[type=file] { display: none; }
+
+/* ======================= PREVIEW PANE ======================= */
+.preview-pane {
+  background: var(--app-bg);
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 18px 80px; gap: 20px;
+  overflow-y: auto; max-height: calc(100vh - 58px);
+}
+.toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  width: 100%; max-width: 840px;
+  background: #fff; padding: 9px 16px; border-radius: 8px;
+  border: 1px solid #dcd1be; box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+.toolbar .info { font-size: 12.5px; font-weight: 600; color: var(--maroon-900); }
+.toolbar .controls { display: flex; align-items: center; gap: 10px; }
+.toolbar select {
+  font-family: var(--font-body); font-size: 12px; padding: 4px 8px;
+  border: 1px solid #cfbe9f; border-radius: 5px; background: #fff;
+}
+.zoom-controls { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--ink-soft); }
+.zoom-controls button {
+  background: #f7f1e5; border: 1px solid #d4c2a5; border-radius: 4px;
+  width: 26px; height: 26px; cursor: pointer; font-weight: 700;
+}
+.zoom-controls button:hover { background: #eee1cc; }
+
+#pages-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 32px;
+}
+
+/* ======================= A4 RESUME PAGE ======================= */
+/* Exact A4 at 96 DPI: 794px width x 1123px height (210mm x 297mm) */
+.page-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.page-label {
+  align-self: flex-start;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--maroon-800);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.a4-page {
+  width: 794px;
+  height: 1123px;
+  position: relative;
+  box-sizing: border-box;
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+  overflow: hidden;
+  box-shadow: 0 12px 35px rgba(35, 12, 18, 0.22), 0 3px 10px rgba(35, 12, 18, 0.12);
+  margin: 0;
+  padding: 0;
+}
+.a4-page.page-1 {
+  background-image: url('template.png');
+}
+.a4-page.page-2,
+.a4-page.page-next {
+  background-image: url('template-page2.png');
+}
+
+/* ======================= PRINT STYLING (Ctrl+P / Native Save PDF) ======================= */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+  .topbar, .form-pane, .toolbar, .page-label {
+    display: none !important;
+  }
+  .layout {
+    display: block !important;
+  }
+  .preview-pane {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: transparent !important;
+  }
+  #pages-wrap {
+    display: block !important;
+    gap: 0 !important;
+  }
+  .page-container {
+    margin: 0 !important;
+    padding: 0 !important;
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+  .a4-page {
+    transform: none !important;
+    margin: 0 !important;
+    margin-bottom: 0 !important;
+    box-shadow: none !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    width: 210mm !important;
+    height: 297mm !important;
+  }
+}
+
+.resume-layout {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* ======================= SIDEBAR (Left 32.5% = 258px) ======================= */
+.res-sidebar {
+  width: 258px;
+  flex-shrink: 0;
+  height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  color: var(--cream-text);
+  overflow: hidden;
+}
+
+/* Photo sits precisely in the circular frame of template.png on Page 1 */
+.photo-frame-circle {
+  position: absolute;
+  left: 47px;
+  top: 27px;
+  width: 174px;
+  height: 174px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  background: transparent;
+}
+.photo-frame-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo-placeholder-icon {
+  width: 64px; height: 64px; fill: rgba(246, 238, 223, 0.45);
+}
+
+/* Page 1 sidebar content starts below the baked-in cursive "Build Debug Innovate" */
+.sidebar-body-p1 {
+  position: absolute;
+  left: 0; right: 0;
+  top: 295px;
+  bottom: 110px;
+  padding: 0 22px 0 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Page 2 sidebar content starts with exact same top margin (38px) as main column! */
+.sidebar-body-p2 {
+  position: absolute;
+  left: 0; right: 0;
+  top: 38px;
+  bottom: 45px;
+  padding: 0 22px 0 24px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.side-sec { margin-bottom: 20px; }
+.side-sec:last-child { margin-bottom: 0; }
+.side-sec-head {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 9px;
+  border-bottom: 1px solid rgba(201, 154, 107, 0.4);
+  padding-bottom: 4px;
+}
+.side-sec-head svg { width: 14px; height: 14px; fill: var(--gold); flex-shrink: 0; }
+.side-sec-head h4 {
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 1.4px; margin: 0; color: #fff;
+}
+.side-item {
+  display: flex; align-items: flex-start; gap: 8px; font-size: 11.5px;
+  line-height: 1.5; margin-bottom: 6px; color: var(--cream-muted);
+  word-break: break-word;
+}
+.side-item svg {
+  width: 12px; height: 12px; fill: var(--gold);
+  margin-top: 2.5px; flex-shrink: 0;
+}
+.side-plain {
+  font-size: 11.5px; line-height: 1.65; color: var(--cream-muted);
+}
+.side-plain b { color: #fff; font-weight: 600; }
+.side-skill-item {
+  position: relative; padding-left: 12px; margin-bottom: 3.5px;
+}
+.side-skill-item::before {
+  content: ''; position: absolute; left: 0; top: 7px;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--gold);
+}
+
+/* ======================= MAIN CONTENT COLUMN ======================= */
+/* Exact 536px width. Uniform padding on ALL pages: top 38px, bottom 45px, left 30px, right 36px */
+.res-main {
+  width: 536px;
+  flex: 1;
+  box-sizing: border-box;
+  padding: 38px 36px 45px 30px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Page 1 Header Block */
+.head-block {
+  /* 160px right padding clears "HARDWARE MEETS POSSIBILITIES" and "Ideas to Devices" */
+  padding-right: 155px;
+  margin-bottom: 14px;
+}
+.head-eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+  text-transform: uppercase; color: var(--maroon-700); margin: 0 0 5px;
+}
+.head-name {
+  font-family: var(--font-display); font-size: 38px; font-weight: 800;
+  color: var(--ink); margin: 0 0 4px; letter-spacing: 0.3px; line-height: 1.12;
+}
+.head-subtitle {
+  font-size: 12px; font-weight: 600; letter-spacing: 1.8px;
+  text-transform: uppercase; color: var(--ink-soft); margin: 0 0 7px;
+}
+.head-tags {
+  font-size: 11.5px; letter-spacing: 0.4px; color: var(--maroon-700);
+  font-weight: 500; margin: 0 0 12px;
+}
+.head-hr {
+  height: 1px; background: var(--line); border: none; margin: 0;
+}
+
+/* Sections */
+.section { margin-bottom: 20px; }
+.section:last-child { margin-bottom: 0; }
+.sec-head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 11px;
+}
+.sec-icon {
+  width: 27px; height: 27px; border-radius: 50%; background: var(--maroon-800);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+}
+.sec-icon svg { width: 13px; height: 13px; fill: var(--cashmere); }
+.sec-head h3 {
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 700;
+  letter-spacing: 1.8px; text-transform: uppercase; color: var(--ink);
+  margin: 0;
+}
+.sec-head .hr-inline {
+  flex: 1; height: 1px; background: var(--line); margin-left: 6px;
+}
+
+.about-text {
+  font-size: 12px; line-height: 1.7; color: var(--ink-soft);
+  margin: 0; padding-left: 37px;
+}
+
+/* Timelines (Experience, Projects, Education) */
+.timeline { padding-left: 37px; position: relative; }
+.tl-item { display: flex; gap: 14px; position: relative; padding-bottom: 14px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-marker {
+  position: relative; width: 10px; flex-shrink: 0;
+  display: flex; justify-content: center;
+}
+.tl-marker .dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--maroon-700); margin-top: 4px; z-index: 1;
+}
+.tl-marker .stem {
+  position: absolute; top: 12px; bottom: -14px;
+  width: 1.5px; background: var(--line);
+}
+.tl-item:last-child .tl-marker .stem { display: none; }
+.tl-date {
+  width: 108px; flex-shrink: 0; font-size: 11px; font-weight: 600;
+  color: var(--maroon-700); padding-top: 1px; letter-spacing: 0.2px;
+}
+.tl-body { flex: 1; min-width: 0; }
+.tl-role { font-size: 13px; font-weight: 700; color: var(--ink); margin: 0 0 1px; }
+.tl-org { font-size: 11.5px; font-weight: 500; color: var(--ink-soft); margin: 0 0 5px; font-style: italic; }
+.tl-meta { font-size: 11px; color: var(--maroon-700); font-weight: 600; margin: 0 0 4px; letter-spacing: 0.3px; }
+.tl-bullets {
+  margin: 0; padding-left: 14px; font-size: 11.5px;
+  line-height: 1.6; color: var(--ink-soft);
+}
+.tl-bullets li { margin-bottom: 2px; }
+.tl-desc { font-size: 11.5px; line-height: 1.6; color: var(--ink-soft); margin: 0; }
+
+.simple-list { padding-left: 37px; margin: 0; list-style: none; }
+.simple-list li {
+  font-size: 11.5px; line-height: 1.65; color: var(--ink-soft);
+  position: relative; padding-left: 14px; margin-bottom: 4px;
+}
+.simple-list li::before {
+  content: ''; position: absolute; left: 0; top: 7px;
+  width: 5px; height: 5px; border-radius: 50%; background: var(--maroon-700);
+}
+
+/* ======================= REFERENCES SECTION ======================= */
+.ref-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-left: 37px;
+}
+.ref-card {
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(216, 196, 165, 0.7);
+  border-left: 3px solid var(--maroon-700);
+  border-radius: 6px;
+  padding: 10px 12px;
+  box-shadow: 0 1px 3px rgba(42, 18, 22, 0.04);
+}
+.ref-name {
+  font-size: 12.5px; font-weight: 700; color: var(--ink);
+  margin: 0 0 2px;
+}
+.ref-desig {
+  font-size: 11px; font-weight: 600; color: var(--maroon-700);
+  margin: 0 0 2px;
+}
+.ref-org {
+  font-size: 11px; color: var(--ink-soft); font-style: italic;
+  margin: 0 0 6px; line-height: 1.35;
+}
+.ref-relation {
+  display: inline-block;
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: #852d40; background: #efe3ce;
+  padding: 1px 6px; border-radius: 3px; margin-bottom: 6px;
+}
+.ref-contacts {
+  display: flex; flex-direction: column; gap: 3px;
+  font-size: 11px; color: var(--ink-soft);
+}
+.ref-contact-item {
+  display: flex; align-items: center; gap: 6px; word-break: break-all;
+}
+.ref-contact-item svg {
+  width: 11px; height: 11px; fill: var(--maroon-700); flex-shrink: 0;
+}
+
+/* Off-screen capture root for export */
+#captureRoot { position: absolute; left: -99999px; top: 0; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <h1>Résumé Studio</h1>
+    <span>Hardware &amp; Embedded Edition</span>
+  </div>
+  <div class="actions">
+    <button class="btn btn-ghost" id="btnSample" title="Fill with rich sample data">Load sample</button>
+    <button class="btn btn-ghost" id="btnClear" title="Clear all fields">Clear all</button>
+    <button class="btn btn-ghost" id="btnPrint" title="Print or save as vector PDF using browser print">🖨 Print / Save PDF</button>
+    <button class="btn btn-primary" id="btnDownload">⬇ Generate &amp; Download PDF</button>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- ============ FORM PANE ============ -->
+  <div class="form-pane" id="formPane"></div>
+
+  <!-- ============ PREVIEW PANE ============ -->
+  <div class="preview-pane">
+    <div class="toolbar">
+      <div class="info" id="pageCountInfo">Live Preview — A4</div>
+      <div class="controls">
+        <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-soft);">
+          <label for="splitSelect"><b>Page 2 Split:</b></label>
+          <select id="splitSelect" onchange="splitSetting = this.value; renderPreview();">
+            <option value="auto">Auto (Smart Flow)</option>
+            <option value="education">Before Education</option>
+            <option value="certifications">Before Certifications</option>
+            <option value="references">Before References</option>
+            <option value="projects">Before Projects</option>
+            <option value="single">Force 1 Page</option>
+          </select>
+        </div>
+        <div class="zoom-controls">
+          <button id="zoomOut" title="Zoom Out">−</button>
+          <span id="zoomLabel" style="min-width:38px; text-align:center;">72%</span>
+          <button id="zoomIn" title="Zoom In">+</button>
+        </div>
+      </div>
+    </div>
+    <div id="pages-wrap"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+/* =========================================================
+   STATE DEFINITION
+========================================================= */
+const defaultState = () => ({
+  photo: "",
+  name: "Abir Hasan",
+  title: "Embedded Systems Engineer",
+  subtitle: "Hardware & Firmware Architect",
+  tags: "Microcontrollers | IoT | Robotics | Real-World Solutions",
+  contacts: [
+    { type: "phone", value: "+8801XXX XXXXXX" },
+    { type: "mail", value: "abirhasan@email.com" },
+    { type: "pin", value: "Dhaka, Bangladesh" },
+    { type: "linkedin", value: "linkedin.com/in/abirhasan" },
+    { type: "github", value: "github.com/abirhasan" },
+    { type: "globe", value: "abirhasan.dev" }
+  ],
+  about: "Passionate Embedded Systems Engineer with a strong interest in designing and building reliable, efficient, real-world hardware-software solutions. Experienced in microcontroller programming, sensor integration, PCB design, and IoT applications. Always eager to learn, solve practical problems, and contribute to innovative engineering projects.",
+  skillsTechnical: [
+    "C / Embedded C++",
+    "Microcontrollers (STM32, ESP32, AVR)",
+    "PCB Design & Prototyping",
+    "Sensors & Actuator Control",
+    "RTOS (FreeRTOS) & State Machines",
+    "Protocols (I2C, SPI, UART, CAN)",
+    "IoT & Wireless (Wi-Fi, BLE, LoRa)"
+  ],
+  skillsTools: [
+    "STM32CubeIDE & Keil uVision",
+    "Arduino IDE & PlatformIO",
+    "Altium Designer & KiCad",
+    "Proteus / Multisim",
+    "MATLAB / Simulink (Basic)",
+    "Git & GitHub",
+    "Linux / Shell Scripting"
+  ],
+  softSkills: [
+    "Hardware Troubleshooting",
+    "Cross-functional Collaboration",
+    "Agile Project Management",
+    "Technical Documentation"
+  ],
+  languages: [
+    { name: "Bangla", level: "Native" },
+    { name: "English", level: "Professional" }
+  ],
+  experience: [
+    {
+      role: "Embedded Systems Researcher",
+      company: "DIU Embedded Systems Research Centre (ESRC)",
+      start: "Jan 2024",
+      end: "Present",
+      bullets: "Leading embedded hardware prototyping with STM32 and ESP32 microcontrollers.\nDeveloped precision sensor acquisition modules and automated test benches.\nAuthored technical documentation, research papers, and institutional patent filings."
+    },
+    {
+      role: "Electronics Engineering Intern",
+      company: "ABC Technologies Ltd., Dhaka",
+      start: "Jun 2023",
+      end: "Dec 2023",
+      bullets: "Assisted senior engineers in multi-layer PCB design, component sourcing, and debugging.\nIntegrated motor drivers and wireless telemetry modules for robotics units.\nConducted signal integrity tests and thermal analysis on production boards."
+    }
+  ],
+  projects: [
+    {
+      name: "Smart Aquaculture Monitoring & Decision Support",
+      stack: "ESP32 | Next.js | Supabase | LoRa",
+      description: "Built a precision water quality sensor node (pH, TDS, turbidity, temp) with solar harvesting and automated cloud telemetry for fish hatchery control."
+    },
+    {
+      name: "Smart Gravity IV Infusion Rate Controller",
+      stack: "PID Control | Embedded C | Optical Sensor",
+      description: "Engineered an automated drip-rate regulator with closed-loop optical feedback and safety cutoff; filed under the Bangladesh Patent Act 2023."
+    },
+    {
+      name: "IoT-Based Real-Time Soil Nutrient Monitoring System",
+      stack: "ESP32 | NPK Sensor | Firebase",
+      description: "Designed a field-deployable soil fertility analyzer delivering NPK concentration trends and fertilizer recommendation alerts via mobile dashboard."
+    }
+  ],
+  education: [
+    {
+      degree: "B.Sc. in Computer Science and Engineering",
+      institution: "Daffodil International University, Dhaka",
+      duration: "2021 – 2025",
+      detail: "Major in Embedded Systems & Robotics · CGPA 3.85 / 4.00"
+    }
+  ],
+  certifications: [
+    "STM32 Embedded System Development — STMicroelectronics",
+    "PCB Design with Altium Designer — Udemy",
+    "IoT Wireless Telemetry with ESP32 & FreeRTOS — Coursera",
+    "Embedded Linux Fundamentals — The Linux Foundation"
+  ],
+  achievements: [
+    "1st Runner-Up, National Hardware & Robotics Showcase 2025",
+    "Published Researcher, IEEE Conference on Advanced Hardware Innovations"
+  ],
+  references: [
+    {
+      name: "Dr. Md. Khasro Miah",
+      designation: "Professor & Director",
+      institution: "Daffodil International University",
+      email: "khasro@daffodilvarsity.edu.bd",
+      phone: "+880 1711-XXXXXX",
+      relation: "Academic Supervisor"
+    },
+    {
+      name: "Engr. Tanvir Ahmed",
+      designation: "Senior Lead Firmware Engineer",
+      institution: "ABC Technologies Ltd.",
+      email: "tanvir.eng@abctech.com",
+      phone: "+880 1812-XXXXXX",
+      relation: "Industry Mentor"
+    }
+  ]
+});
+
+let state = defaultState();
+let splitSetting = "auto"; // "auto", "education", "certifications", "references", "projects", "single"
+
+/* =========================================================
+   SVG ICONS
+========================================================= */
+const ICON = {
+  person: '<svg viewBox="0 0 24 24"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-4.4 0-9 2.2-9 5v2h18v-2c0-2.8-4.6-5-9-5z"/></svg>',
+  briefcase: '<svg viewBox="0 0 24 24"><path d="M9 4a2 2 0 00-2 2v1H4a2 2 0 00-2 2v9a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2h-3V6a2 2 0 00-2-2H9zm0 2h6v1H9V6zM4 9h16v9H4V9z"/></svg>',
+  folder: '<svg viewBox="0 0 24 24"><path d="M4 5a1 1 0 00-1 1v12a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1h-8l-2-2H4z"/></svg>',
+  cap: '<svg viewBox="0 0 24 24"><path d="M12 3L1 8l11 5 9-4.1V17h2V8L12 3zM5 12.2V16c0 2 3 4 7 4s7-2 7-4v-3.8l-7 3.2-7-3.2z"/></svg>',
+  ribbon: '<svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 100 10 5 5 0 000-10zM9 12.5L6 22l6-3 6 3-3-9.5"/></svg>',
+  star: '<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.9L22 9.6l-5.3 4.8L18.2 22 12 18l-6.2 4 1.5-7.6L2 9.6l7.1-.7L12 2z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><path d="M12 9a3 3 0 100 6 3 3 0 000-6zm8.4 3a7.9 7.9 0 00-.2-1.8l2-1.5-2-3.4-2.3.9a8 8 0 00-1.6-.9L16 3h-4l-.3 2.3a8 8 0 00-1.6.9l-2.3-.9-2 3.4 2 1.5a7.9 7.9 0 000 3.6l-2 1.5 2 3.4 2.3-.9c.5.4 1 .7 1.6.9L12 21h4l.3-2.3c.6-.2 1.1-.5 1.6-.9l2.3.9 2-3.4-2-1.5c.1-.6.2-1.2.2-1.8z"/></svg>',
+  wrench: '<svg viewBox="0 0 24 24"><path d="M22 4.5a5.5 5.5 0 01-7.4 6.6L6 20l-2-2 8.9-8.6A5.5 5.5 0 0119.5 2l-3.7 3.7 1.5 1.5L21 3.5l1 1z"/></svg>',
+  users: '<svg viewBox="0 0 24 24"><path d="M9 12a4 4 0 100-8 4 4 0 000 8zm7-1a3.5 3.5 0 10-2-6.4A5 5 0 0117 9c0 .7-.1 1.4-.4 2h-.6zM2 20c0-3 3-5.5 7-5.5s7 2.5 7 5.5v1H2v-1zm15-4c2.8.4 5 2.3 5 4.5V21h-4v-1c0-1.6-.5-3-1.4-4.1.1-.1.3-.1.4-.1z"/></svg>',
+  chat: '<svg viewBox="0 0 24 24"><path d="M4 4h16a1 1 0 011 1v11a1 1 0 01-1 1H8l-4 4V5a1 1 0 011-1z"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M6.6 10.8a15 15 0 006.6 6.6l2.2-2.2a1 1 0 011-.2 11 11 0 003.5.6 1 1 0 011 1V20a1 1 0 01-1 1A17 17 0 013 4a1 1 0 011-1h3.4a1 1 0 011 1 11 11 0 00.6 3.5 1 1 0 01-.2 1l-2.2 2.3z"/></svg>',
+  mail: '<svg viewBox="0 0 24 24"><path d="M3 5h18a1 1 0 011 1v12a1 1 0 01-1 1H3a1 1 0 01-1-1V6a1 1 0 011-1zm1.6 2L12 12.5 19.4 7H4.6zM4 8.4V18h16V8.4l-8 5.5-8-5.5z"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 00-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 00-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z"/></svg>',
+  linkedin: '<svg viewBox="0 0 24 24"><path d="M4.98 3.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5zM3 9h4v12H3V9zm7 0h3.8v1.7h.1c.5-.9 1.8-1.9 3.7-1.9 4 0 4.4 2.6 4.4 6V21h-4v-5.4c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.9V21h-4V9z"/></svg>',
+  github: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 00-3.2 19.5c.5.1.7-.2.7-.5v-1.7c-2.8.6-3.4-1.3-3.4-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.5 2.3 1.1 2.9.8.1-.7.4-1.1.6-1.4-2.2-.2-4.6-1.1-4.6-5A3.9 3.9 0 016 9.5c-.1-.2-.5-1.3.1-2.7 0 0 .9-.3 3 1.1a10.4 10.4 0 015.5 0c2.1-1.4 3-1.1 3-1.1.6 1.4.2 2.5.1 2.7a3.9 3.9 0 011 2.7c0 3.9-2.4 4.8-4.6 5 .3.3.7.9.7 1.8v2.7c0 .3.2.6.7.5A10 10 0 0012 2z"/></svg>',
+  globe: '<svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm7.9 9h-3.5a16 16 0 00-1.2-5.4A8 8 0 0119.9 11zM12 4c.8 1.2 1.7 3.4 1.9 7H10.1c.2-3.6 1.1-5.8 1.9-7zM4.1 11a8 8 0 015.7-5.4A16 16 0 008.6 11H4.1zm0 2h4.5a16 16 0 001.2 5.4A8 8 0 014.1 13zM12 20c-.8-1.2-1.7-3.4-1.9-7h3.8c-.2 3.6-1.1 5.8-1.9 7zm2.8-.6a16 16 0 001.2-5.4h3.5a8 8 0 01-4.7 5.4z"/></svg>',
+  handshake: '<svg viewBox="0 0 24 24"><path d="M19 14.8c-.7-.7-1.7-.9-2.5-.5L14 12.8v-1.9l2.7-2.7a2.5 2.5 0 000-3.5 2.5 2.5 0 00-3.5 0L9.4 8.5 7.9 7 9 5.9a1 1 0 00-1.4-1.4L6.1 6 4.7 4.6A2 2 0 001.9 7.4L3.3 8.8l-1.1 1.1a1 1 0 001.4 1.4L4.7 10.2 6.2 11.7l-3.8 3.8a2.5 2.5 0 000 3.5 2.5 2.5 0 003.5 0l2.7-2.7h1.9l1.5 2.5c-.4.8-.2 1.8.5 2.5.8.8 2 .8 2.8 0l6.7-6.7c.8-.8.8-2 0-2.8z"/></svg>'
+};
+function icon(name){ return ICON[name] || ''; }
+
+/* =========================================================
+   UTILITIES
+========================================================= */
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function nl2list(text){
+  return String(text||'').split('\n').map(s=>s.trim()).filter(Boolean);
+}
+function set(path, value){
+  const keys = path.split('.');
+  let obj = state;
+  for(let i=0; i<keys.length-1; i++) obj = obj[keys[i]];
+  obj[keys[keys.length-1]] = value;
+}
+function get(path){
+  return path.split('.').reduce((o,k) => o?.[k], state);
+}
+
+/* =========================================================
+   FORM BUILDER
+========================================================= */
+function fieldHTML(label, path, opts={}){
+  const val = esc(get(path));
+  const type = opts.type || 'text';
+  if(type === 'textarea'){
+    return `<div class="f-row">
+      <label>${label}</label>
+      <textarea oninput="set('${path}', this.value); renderPreview();" style="${opts.style||''}">${val}</textarea>
+      ${opts.hint ? `<div class="hint">${opts.hint}</div>` : ''}
+    </div>`;
+  }
+  return `<div class="f-row">
+    <label>${label}</label>
+    <input type="${type}" value="${val}" placeholder="${esc(opts.placeholder||'')}" oninput="set('${path}', this.value); renderPreview();">
+    ${opts.hint ? `<div class="hint">${opts.hint}</div>` : ''}
+  </div>`;
+}
+
+function sectionBox(iconName, title, inner, countBadge = null){
+  return `<div class="f-section">
+    <div class="f-section-head">
+      <div class="title-wrap">
+        ${icon(iconName)}
+        <h3>${esc(title)}</h3>
+      </div>
+      ${countBadge !== null ? `<span class="badge-count">${countBadge}</span>` : ''}
+    </div>
+    ${inner}
+  </div>`;
+}
+
+function renderForm(){
+  ensureContacts();
+  const f = document.getElementById('formPane');
+  f.innerHTML = `
+    ${sectionBox('person', 'Profile Photo & Header', `
+      <div class="photo-upload">
+        <div class="photo-preview" id="photoPreviewSmall">
+          ${state.photo ? `<img src="${state.photo}" style="width:100%;height:100%;object-fit:cover;">` : icon('person')}
+        </div>
+        <div class="upload-btn-wrap">
+          <label class="btn btn-small btn-add" for="photoInput">📷 Choose profile photo</label>
+          <input type="file" id="photoInput" accept="image/*">
+          ${state.photo ? `<div><button class="btn btn-small btn-ghost" style="margin-top:6px;color:#a33b3b;border-color:#e2c6c6;" onclick="state.photo=''; renderForm(); renderPreview();">Remove photo</button></div>` : ''}
+        </div>
+      </div>
+      ${fieldHTML('Full Name', 'name')}
+      ${fieldHTML('Job Title / Eyebrow', 'title')}
+      ${fieldHTML('Sub-role / Discipline', 'subtitle')}
+      ${fieldHTML('Core Specializations / Tags Line', 'tags', {hint:'Separate with | e.g. Microcontrollers | IoT | Robotics'})}
+    `)}
+
+    ${sectionBox('phone', 'Contact Details', renderContacts(), (state.contacts || []).length)}
+
+    ${sectionBox('person', 'About Me (Summary)', `
+      ${fieldHTML('Professional Summary', 'about', {type:'textarea', style:'min-height:90px;'})}
+    `)}
+
+    ${sectionBox('gear', 'Technical Skills', renderSimpleList('skillsTechnical', 'e.g. C / C++, PCB Design'), state.skillsTechnical.length)}
+    ${sectionBox('wrench', 'Tools & Software', renderSimpleList('skillsTools', 'e.g. Altium Designer, STM32CubeIDE'), state.skillsTools.length)}
+    ${sectionBox('users', 'Soft Skills', renderSimpleList('softSkills', 'e.g. Hardware Troubleshooting'), state.softSkills.length)}
+    ${sectionBox('chat', 'Languages', renderLanguages(), state.languages.length)}
+
+    ${sectionBox('briefcase', 'Work Experience', renderExperience(), state.experience.length)}
+    ${sectionBox('folder', 'Key Projects', renderProjects(), state.projects.length)}
+    ${sectionBox('cap', 'Education', renderEducation(), state.education.length)}
+    ${sectionBox('ribbon', 'Certifications', renderSimpleList('certifications', 'e.g. STM32 Embedded — STMicroelectronics'), state.certifications.length)}
+    ${sectionBox('star', 'Achievements & Publications', renderSimpleList('achievements', 'e.g. 1st Place National Robotics 2025'), state.achievements.length)}
+
+    ${sectionBox('handshake', 'References', renderReferences(), state.references.length)}
+  `;
+
+  document.getElementById('photoInput').addEventListener('change', function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      state.photo = ev.target.result;
+      renderForm();
+      renderPreview();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function ensureContacts(){
+  if(!Array.isArray(state.contacts)){
+    if(state.contact && typeof state.contact === 'object'){
+      state.contacts = [];
+      if(state.contact.phone) state.contacts.push({type:'phone', value: state.contact.phone});
+      if(state.contact.email) state.contacts.push({type:'mail', value: state.contact.email});
+      if(state.contact.location) state.contacts.push({type:'pin', value: state.contact.location});
+      if(state.contact.linkedin) state.contacts.push({type:'linkedin', value: state.contact.linkedin});
+      if(state.contact.github) state.contacts.push({type:'github', value: state.contact.github});
+      if(state.contact.website) state.contacts.push({type:'globe', value: state.contact.website});
+    } else {
+      state.contacts = [{ type: 'phone', value: '' }];
+    }
+  }
+}
+
+function renderContacts(){
+  ensureContacts();
+  const arr = state.contacts || [];
+  const options = [
+    { id: 'phone', name: '📞 Phone' },
+    { id: 'mail', name: '✉️ Email' },
+    { id: 'pin', name: '📍 Location' },
+    { id: 'linkedin', name: '🔗 LinkedIn' },
+    { id: 'github', name: '🐙 GitHub' },
+    { id: 'globe', name: '🌐 Website' },
+    { id: 'chat', name: '💬 Social / Chat' },
+    { id: 'person', name: '👤 Other' }
+  ];
+  let rows = arr.map((v, i) => `
+    <div class="list-row contact-row">
+      <select onchange="state.contacts[${i}].type=this.value; renderPreview();">
+        ${options.map(o => `<option value="${o.id}" ${v.type===o.id?'selected':''}>${o.name}</option>`).join('')}
+      </select>
+      <input type="text" value="${esc(v.value)}" placeholder="Contact detail..." oninput="state.contacts[${i}].value=this.value; renderPreview();">
+      <button class="btn-remove" title="Remove contact" onclick="state.contacts.splice(${i},1); renderForm(); renderPreview();">✕</button>
+    </div>`).join('');
+  return `${rows}<button class="btn btn-small btn-add" style="margin-top:6px;" onclick="state.contacts.push({type:'phone', value:''}); renderForm(); renderPreview();">+ Add contact</button>`;
+}
+
+function renderSimpleList(path, placeholder){
+  const arr = get(path);
+  let rows = arr.map((v, i) => `
+    <div class="list-row">
+      <input type="text" value="${esc(v)}" placeholder="${esc(placeholder||'')}" oninput="get('${path}')[${i}]=this.value; renderPreview();">
+      <button class="btn-remove" title="Remove" onclick="get('${path}').splice(${i},1); renderForm(); renderPreview();">✕</button>
+    </div>`).join('');
+  return `${rows}<button class="btn btn-small btn-add" style="margin-top:6px;" onclick="get('${path}').push(''); renderForm(); renderPreview();">+ Add item</button>`;
+}
+
+function renderLanguages(){
+  const arr = state.languages;
+  let rows = arr.map((v, i) => `
+    <div class="list-row">
+      <input type="text" value="${esc(v.name)}" placeholder="Language" style="flex:1.4;" oninput="state.languages[${i}].name=this.value; renderPreview();">
+      <select onchange="state.languages[${i}].level=this.value; renderPreview();">
+        ${['Native','Fluent','Professional','Intermediate','Basic'].map(l => `<option ${v.level===l?'selected':''}>${l}</option>`).join('')}
+      </select>
+      <button class="btn-remove" title="Remove" onclick="state.languages.splice(${i},1); renderForm(); renderPreview();">✕</button>
+    </div>`).join('');
+  return `${rows}<button class="btn btn-small btn-add" style="margin-top:6px;" onclick="state.languages.push({name:'',level:'Professional'}); renderForm(); renderPreview();">+ Add language</button>`;
+}
+
+function renderExperience(){
+  const arr = state.experience;
+  let cards = arr.map((v, i) => `
+    <div class="card">
+      <div class="card-top">
+        <span class="card-tag">Experience ${i+1}</span>
+        <button class="btn-remove" title="Remove experience" onclick="state.experience.splice(${i},1); renderForm(); renderPreview();">✕</button>
+      </div>
+      <div class="f-row"><label>Role / Designation</label><input type="text" value="${esc(v.role)}" oninput="state.experience[${i}].role=this.value; renderPreview();"></div>
+      <div class="f-row"><label>Company / Organization</label><input type="text" value="${esc(v.company)}" oninput="state.experience[${i}].company=this.value; renderPreview();"></div>
+      <div class="f-two">
+        <div class="f-row"><label>Start Date</label><input type="text" value="${esc(v.start)}" placeholder="e.g. Jan 2024" oninput="state.experience[${i}].start=this.value; renderPreview();"></div>
+        <div class="f-row"><label>End Date</label><input type="text" value="${esc(v.end)}" placeholder="e.g. Present" oninput="state.experience[${i}].end=this.value; renderPreview();"></div>
+      </div>
+      <div class="f-row"><label>Bullet points (one per line)</label><textarea oninput="state.experience[${i}].bullets=this.value; renderPreview();">${esc(v.bullets)}</textarea></div>
+    </div>`).join('');
+  return `${cards}<button class="btn btn-small btn-add" onclick="state.experience.push({role:'',company:'',start:'',end:'Present',bullets:''}); renderForm(); renderPreview();">+ Add experience</button>`;
+}
+
+function renderProjects(){
+  const arr = state.projects;
+  let cards = arr.map((v, i) => `
+    <div class="card">
+      <div class="card-top">
+        <span class="card-tag">Project ${i+1}</span>
+        <button class="btn-remove" title="Remove project" onclick="state.projects.splice(${i},1); renderForm(); renderPreview();">✕</button>
+      </div>
+      <div class="f-row"><label>Project Name</label><input type="text" value="${esc(v.name)}" oninput="state.projects[${i}].name=this.value; renderPreview();"></div>
+      <div class="f-row"><label>Technologies / Key Hardware</label><input type="text" value="${esc(v.stack)}" placeholder="e.g. ESP32 | Next.js | FreeRTOS" oninput="state.projects[${i}].stack=this.value; renderPreview();"></div>
+      <div class="f-row"><label>Project Summary / Accomplishments</label><textarea oninput="state.projects[${i}].description=this.value; renderPreview();">${esc(v.description)}</textarea></div>
+    </div>`).join('');
+  return `${cards}<button class="btn btn-small btn-add" onclick="state.projects.push({name:'',stack:'',description:''}); renderForm(); renderPreview();">+ Add project</button>`;
+}
+
+function renderEducation(){
+  const arr = state.education;
+  let cards = arr.map((v, i) => `
+    <div class="card">
+      <div class="card-top">
+        <span class="card-tag">Education ${i+1}</span>
+        <button class="btn-remove" title="Remove education" onclick="state.education.splice(${i},1); renderForm(); renderPreview();">✕</button>
+      </div>
+      <div class="f-row"><label>Degree / Certificate</label><input type="text" value="${esc(v.degree)}" oninput="state.education[${i}].degree=this.value; renderPreview();"></div>
+      <div class="f-row"><label>Institution / University</label><input type="text" value="${esc(v.institution)}" oninput="state.education[${i}].institution=this.value; renderPreview();"></div>
+      <div class="f-two">
+        <div class="f-row"><label>Passing Year / Duration</label><input type="text" value="${esc(v.duration)}" placeholder="e.g. 2021 – 2025" oninput="state.education[${i}].duration=this.value; renderPreview();"></div>
+        <div class="f-row"><label>CGPA / Details</label><input type="text" value="${esc(v.detail)}" placeholder="e.g. CGPA 3.85" oninput="state.education[${i}].detail=this.value; renderPreview();"></div>
+      </div>
+    </div>`).join('');
+  return `${cards}<button class="btn btn-small btn-add" onclick="state.education.push({degree:'',institution:'',duration:'',detail:''}); renderForm(); renderPreview();">+ Add education</button>`;
+}
+
+/* =========================================================
+   REFERENCES FORM BUILDER (NEW)
+========================================================= */
+function renderReferences(){
+  const arr = state.references;
+  let cards = arr.map((v, i) => `
+    <div class="card">
+      <div class="card-top">
+        <span class="card-tag">Reference ${i+1}</span>
+        <button class="btn-remove" title="Remove reference" onclick="state.references.splice(${i},1); renderForm(); renderPreview();">✕</button>
+      </div>
+      <div class="f-row">
+        <label>Full Name</label>
+        <input type="text" value="${esc(v.name)}" placeholder="e.g. Dr. Md. Khasro Miah" oninput="state.references[${i}].name=this.value; renderPreview();">
+      </div>
+      <div class="f-two">
+        <div class="f-row">
+          <label>Designation / Title</label>
+          <input type="text" value="${esc(v.designation)}" placeholder="e.g. Professor & Director" oninput="state.references[${i}].designation=this.value; renderPreview();">
+        </div>
+        <div class="f-row">
+          <label>Relationship / Role</label>
+          <input type="text" value="${esc(v.relation)}" placeholder="e.g. Academic Supervisor" oninput="state.references[${i}].relation=this.value; renderPreview();">
+        </div>
+      </div>
+      <div class="f-row">
+        <label>Institution / Organization</label>
+        <input type="text" value="${esc(v.institution)}" placeholder="e.g. Daffodil International University" oninput="state.references[${i}].institution=this.value; renderPreview();">
+      </div>
+      <div class="f-two">
+        <div class="f-row">
+          <label>Email</label>
+          <input type="email" value="${esc(v.email)}" placeholder="e.g. referee@email.com" oninput="state.references[${i}].email=this.value; renderPreview();">
+        </div>
+        <div class="f-row">
+          <label>Phone</label>
+          <input type="tel" value="${esc(v.phone)}" placeholder="e.g. +880 1711-XXXXXX" oninput="state.references[${i}].phone=this.value; renderPreview();">
+        </div>
+      </div>
+    </div>`).join('');
+  return `${cards}<button class="btn btn-small btn-add" onclick="state.references.push({name:'',designation:'',institution:'',email:'',phone:'',relation:'Academic Referee'}); renderForm(); renderPreview();">+ Add reference</button>`;
+}
+
+/* =========================================================
+   RESUME PREVIEW & MULTI-PAGE RENDERER
+========================================================= */
+function renderPreview(){
+  const pagesWrap = document.getElementById('pages-wrap');
+  if(!pagesWrap) return;
+
+  // Decide sections for Page 1 vs Page 2
+  const pagesData = partitionContent();
+
+  let pagesHTML = '';
+  pagesData.forEach((pData, idx) => {
+    const pageNum = idx + 1;
+    const isP1 = (pageNum === 1);
+    const pageClass = isP1 ? 'page-1' : 'page-2';
+
+    pagesHTML += `
+      <div class="page-container" id="pageContainer-${pageNum}">
+        <div class="page-label">Page ${pageNum} of ${pagesData.length}</div>
+        <div class="a4-page ${pageClass}" id="a4Page-${pageNum}">
+          <div class="resume-layout">
+            <!-- Left Sidebar -->
+            ${renderSidebarContent(pageNum, isP1)}
+            
+            <!-- Right Main Column -->
+            <div class="res-main">
+              ${isP1 ? renderHeaderBlock() : ''}
+              ${pData.sectionsHTML}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  pagesWrap.innerHTML = pagesHTML;
+  document.getElementById('pageCountInfo').textContent = `Live Preview — ${pagesData.length} Page${pagesData.length > 1 ? 's' : ''} (A4)`;
+  applyZoom();
+}
+
+function partitionContent(){
+  // Gather non-empty content pieces
+  const aboutHTML = state.about ? renderAboutSection() : '';
+  const expHTML = state.experience.filter(e => e.role || e.company).length ? renderExperienceSection() : '';
+  const projHTML = state.projects.filter(p => p.name).length ? renderProjectsSection() : '';
+  const eduHTML = state.education.filter(e => e.degree || e.institution).length ? renderEducationSection() : '';
+  const certsHTML = state.certifications.filter(Boolean).length ? renderCertificationsSection() : '';
+  const achHTML = state.achievements.filter(Boolean).length ? renderAchievementsSection() : '';
+  const refHTML = state.references.filter(r => r.name).length ? renderReferencesSection() : '';
+
+  if(splitSetting === 'single'){
+    return [{
+      sectionsHTML: [aboutHTML, expHTML, projHTML, eduHTML, certsHTML, achHTML, refHTML].join('')
+    }];
+  }
+
+  if(splitSetting === 'projects'){
+    return [
+      { sectionsHTML: [aboutHTML, expHTML].join('') },
+      { sectionsHTML: [projHTML, eduHTML, certsHTML, achHTML, refHTML].join('') }
+    ];
+  }
+
+  if(splitSetting === 'education'){
+    return [
+      { sectionsHTML: [aboutHTML, expHTML, projHTML].join('') },
+      { sectionsHTML: [eduHTML, certsHTML, achHTML, refHTML].join('') }
+    ];
+  }
+
+  if(splitSetting === 'certifications'){
+    return [
+      { sectionsHTML: [aboutHTML, expHTML, projHTML, eduHTML].join('') },
+      { sectionsHTML: [certsHTML, achHTML, refHTML].join('') }
+    ];
+  }
+
+  if(splitSetting === 'references'){
+    return [
+      { sectionsHTML: [aboutHTML, expHTML, projHTML, eduHTML, certsHTML, achHTML].join('') },
+      { sectionsHTML: [refHTML].join('') }
+    ];
+  }
+
+  // AUTO (Smart Flow):
+  // Page 1: Header + About + Experience + Projects
+  // Page 2: Education + Certifications + Achievements + References
+  // If no education/certs/ach/ref, keep 1 page!
+  const p2Items = [eduHTML, certsHTML, achHTML, refHTML].filter(Boolean);
+  if(p2Items.length === 0){
+    return [{
+      sectionsHTML: [aboutHTML, expHTML, projHTML].join('')
+    }];
+  }
+
+  return [
+    { sectionsHTML: [aboutHTML, expHTML, projHTML].join('') },
+    { sectionsHTML: p2Items.join('') }
+  ];
+}
+
+/* =========================================================
+   RESUME SECTION COMPONENTS
+========================================================= */
+function renderSidebarContent(pageNum, isP1){
+  ensureContacts();
+  const contacts = (state.contacts || []).filter(c => c && c.value && String(c.value).trim());
+  const techSkills = state.skillsTechnical.filter(Boolean);
+  const toolSkills = state.skillsTools.filter(Boolean);
+  const softSkills = state.softSkills.filter(Boolean);
+  const langs = state.languages.filter(l => l.name);
+
+  if(isP1){
+    return `
+      <div class="res-sidebar">
+        <!-- Photo circle placed precisely over template.png frame -->
+        <div class="photo-frame-circle">
+          ${state.photo ? `<img src="${state.photo}">` : `<div class="photo-placeholder-icon">${icon('person')}</div>`}
+        </div>
+
+        <!-- Sidebar body starts below the cursive "Build Debug Innovate" -->
+        <div class="sidebar-body-p1">
+          ${contacts.length ? `
+          <div class="side-sec">
+            <div class="side-sec-head">${icon('phone')}<h4>Contact</h4></div>
+            ${contacts.map(c => `
+              <div class="side-item">${icon(c.type || 'phone')}<span>${esc(c.value)}</span></div>
+            `).join('')}
+          </div>` : ''}
+
+          ${techSkills.length ? `
+          <div class="side-sec">
+            <div class="side-sec-head">${icon('gear')}<h4>Technical Skills</h4></div>
+            <div class="side-plain">
+              ${techSkills.map(s => `<div class="side-skill-item">${esc(s)}</div>`).join('')}
+            </div>
+          </div>` : ''}
+
+          ${toolSkills.length ? `
+          <div class="side-sec">
+            <div class="side-sec-head">${icon('wrench')}<h4>Tools &amp; Software</h4></div>
+            <div class="side-plain">
+              ${toolSkills.map(s => `<div class="side-skill-item">${esc(s)}</div>`).join('')}
+            </div>
+          </div>` : ''}
+        </div>
+      </div>
+    `;
+  } else {
+    // Page 2 Sidebar: consistent margins (top 38px, bottom 45px), displays Soft Skills and Languages
+    return `
+      <div class="res-sidebar">
+        <div class="sidebar-body-p2">
+          ${softSkills.length ? `
+          <div class="side-sec">
+            <div class="side-sec-head">${icon('users')}<h4>Soft Skills</h4></div>
+            <div class="side-plain">
+              ${softSkills.map(s => `<div class="side-skill-item">${esc(s)}</div>`).join('')}
+            </div>
+          </div>` : ''}
+
+          ${langs.length ? `
+          <div class="side-sec">
+            <div class="side-sec-head">${icon('chat')}<h4>Languages</h4></div>
+            ${langs.map(l => `<div class="side-item">${icon('chat')}<span><b>${esc(l.name)}</b> — ${esc(l.level)}</span></div>`).join('')}
+          </div>` : ''}
+
+          <div class="side-sec" style="margin-top:28px; padding-top:14px; border-top:1px dashed rgba(201,154,107,0.35);">
+            <div style="font-family:var(--font-script); font-size:17px; color:var(--gold); line-height:1.35;">
+              Precision hardware, robust firmware, real-world impact.
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function renderHeaderBlock(){
+  return `
+    <div class="head-block">
+      ${state.title ? `<p class="head-eyebrow">${esc(state.title)}</p>` : ''}
+      <h1 class="head-name">${esc(state.name)}</h1>
+      ${state.subtitle ? `<p class="head-subtitle">${esc(state.subtitle)}</p>` : ''}
+      ${state.tags ? `<p class="head-tags">${esc(state.tags)}</p>` : ''}
+      <hr class="head-hr">
+    </div>
+  `;
+}
+
+function renderAboutSection(){
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('person')}</div><h3>About Me</h3><div class="hr-inline"></div></div>
+      <p class="about-text">${esc(state.about)}</p>
+    </div>
+  `;
+}
+
+function renderExperienceSection(){
+  const exps = state.experience.filter(e => e.role || e.company);
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('briefcase')}</div><h3>Experience</h3><div class="hr-inline"></div></div>
+      <div class="timeline">
+        ${exps.map(e => `
+          <div class="tl-item">
+            <div class="tl-marker"><div class="dot"></div><div class="stem"></div></div>
+            <div class="tl-date">${esc(e.start)} – ${esc(e.end)}</div>
+            <div class="tl-body">
+              <p class="tl-role">${esc(e.role)}</p>
+              <p class="tl-org">${esc(e.company)}</p>
+              ${e.bullets ? `<ul class="tl-bullets">${nl2list(e.bullets).map(b => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderProjectsSection(){
+  const projs = state.projects.filter(p => p.name);
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('folder')}</div><h3>Projects</h3><div class="hr-inline"></div></div>
+      <div class="timeline">
+        ${projs.map(p => `
+          <div class="tl-item">
+            <div class="tl-marker"><div class="dot"></div><div class="stem"></div></div>
+            <div class="tl-date" style="width:0; margin-right:-14px;"></div>
+            <div class="tl-body">
+              <p class="tl-role">${esc(p.name)}</p>
+              ${p.stack ? `<p class="tl-meta">${esc(p.stack)}</p>` : ''}
+              ${p.description ? `<p class="tl-desc">${esc(p.description)}</p>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderEducationSection(){
+  const edus = state.education.filter(e => e.degree || e.institution);
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('cap')}</div><h3>Education</h3><div class="hr-inline"></div></div>
+      <div class="timeline">
+        ${edus.map(e => `
+          <div class="tl-item">
+            <div class="tl-marker"><div class="dot"></div><div class="stem"></div></div>
+            <div class="tl-date">${esc(e.duration)}</div>
+            <div class="tl-body">
+              <p class="tl-role">${esc(e.degree)}</p>
+              <p class="tl-org">${esc(e.institution)}</p>
+              ${e.detail ? `<p class="tl-desc">${esc(e.detail)}</p>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderCertificationsSection(){
+  const certs = state.certifications.filter(Boolean);
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('ribbon')}</div><h3>Certifications</h3><div class="hr-inline"></div></div>
+      <ul class="simple-list">
+        ${certs.map(c => `<li>${esc(c)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+function renderAchievementsSection(){
+  const achs = state.achievements.filter(Boolean);
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('star')}</div><h3>Achievements &amp; Publications</h3><div class="hr-inline"></div></div>
+      <ul class="simple-list">
+        ${achs.map(a => `<li>${esc(a)}</li>`).join('')}
+      </ul>
+    </div>
+  `;
+}
+
+/* =========================================================
+   REFERENCES SECTION RENDERER (NEW)
+========================================================= */
+function renderReferencesSection(){
+  const refs = state.references.filter(r => r.name);
+  if(!refs.length) return '';
+  return `
+    <div class="section">
+      <div class="sec-head"><div class="sec-icon">${icon('handshake')}</div><h3>References</h3><div class="hr-inline"></div></div>
+      <div class="ref-grid">
+        ${refs.map(r => `
+          <div class="ref-card">
+            <p class="ref-name">${esc(r.name)}</p>
+            ${r.designation ? `<p class="ref-desig">${esc(r.designation)}</p>` : ''}
+            ${r.institution ? `<p class="ref-org">${esc(r.institution)}</p>` : ''}
+            ${r.relation ? `<span class="ref-relation">${esc(r.relation)}</span>` : ''}
+            <div class="ref-contacts">
+              ${r.email ? `<span class="ref-contact-item">${icon('mail')} ${esc(r.email)}</span>` : ''}
+              ${r.phone ? `<span class="ref-contact-item">${icon('phone')} ${esc(r.phone)}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+/* =========================================================
+   ZOOM CONTROLS
+========================================================= */
+let zoom = 0.72;
+function applyZoom(){
+  const pages = document.querySelectorAll('.a4-page');
+  pages.forEach(p => {
+    p.style.transform = `scale(${zoom})`;
+    p.style.transformOrigin = 'top center';
+    p.style.marginBottom = `${1123 * (zoom - 1)}px`;
+  });
+  const label = document.getElementById('zoomLabel');
+  if(label) label.textContent = Math.round(zoom * 100) + '%';
+}
+document.getElementById('zoomIn').onclick = () => {
+  zoom = Math.min(1.15, zoom + 0.08);
+  applyZoom();
+};
+document.getElementById('zoomOut').onclick = () => {
+  zoom = Math.max(0.35, zoom - 0.08);
+  applyZoom();
+};
+
+/* =========================================================
+   TOPBAR ACTIONS: SAMPLE & CLEAR
+========================================================= */
+document.getElementById('btnSample').onclick = () => {
+  state = defaultState();
+  renderForm();
+  renderPreview();
+};
+
+document.getElementById('btnClear').onclick = () => {
+  if(!confirm('Clear all fields and start blank?')) return;
+  state = {
+    photo: "", name: "", title: "", subtitle: "", tags: "",
+    contacts: [{ type: "phone", value: "" }],
+    about: "", skillsTechnical: [""], skillsTools: [""], softSkills: [""],
+    languages: [{ name:"", level:"Professional" }],
+    experience: [{ role:"", company:"", start:"", end:"", bullets:"" }],
+    projects: [{ name:"", stack:"", description:"" }],
+    education: [{ degree:"", institution:"", duration:"", detail:"" }],
+    certifications: [""], achievements: [""],
+    references: [{ name:"", designation:"", institution:"", email:"", phone:"", relation:"" }]
+  };
+  renderForm();
+  renderPreview();
+};
+
+/* =========================================================
+   HIGH-DEFINITION MULTI-PAGE PDF GENERATOR
+   - Captures each page cleanly
+   - Zero white borders around the page (0mm, 0mm, 210mm, 297mm)
+   - Consistent margins across all pages
+========================================================= */
+async function generatePdf(){
+  const btn = document.getElementById('btnDownload');
+  const originalLabel = btn.innerHTML;
+
+  // On local file:// URLs, browser security blocks canvas extraction.
+  // We use window.print() so the user gets an instant, high-resolution vector PDF without errors.
+  if (window.location.protocol === 'file:') {
+    window.print();
+    return;
+  }
+
+  btn.innerHTML = '⏳ Generating PDF…';
+  btn.disabled = true;
+
+  const prevZoom = zoom;
+
+  try {
+    // 1. Temporarily reset zoom so html2canvas captures at exact 1:1 scale
+    zoom = 1;
+    applyZoom();
+
+    // Small delay to allow layout to settle
+    await new Promise(r => setTimeout(r, 120));
+
+    const pages = document.querySelectorAll('.a4-page');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait'
+    });
+
+    for (let i = 0; i < pages.length; i++) {
+      const pageEl = pages[i];
+      const canvas = await html2canvas(pageEl, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#f4ead9',
+        width: 794,
+        height: 1123
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      if (i > 0) pdf.addPage('a4');
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297, undefined, 'FAST');
+    }
+
+    // Restore zoom
+    zoom = prevZoom;
+    applyZoom();
+
+    const safeName = (state.name ? state.name.trim().replace(/\s+/g, '_') : 'Resume') + '_Resume.pdf';
+    pdf.save(safeName);
+
+  } catch (err) {
+    console.warn('Canvas PDF export fallback to native print:', err);
+    zoom = prevZoom;
+    applyZoom();
+    // Seamless fallback to browser native print
+    window.print();
+  } finally {
+    btn.innerHTML = originalLabel;
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btnDownload').addEventListener('click', generatePdf);
+document.getElementById('btnPrint').addEventListener('click', () => window.print());
+
+/* =========================================================
+   INITIALIZATION
+========================================================= */
+renderForm();
+renderPreview();
+</script>
+</body>
+</html>
